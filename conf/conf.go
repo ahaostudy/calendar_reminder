@@ -7,10 +7,8 @@ import (
 	"sync"
 
 	"github.com/sirupsen/logrus"
-
-	"gopkg.in/yaml.v3"
-
 	"gopkg.in/validator.v2"
+	"gopkg.in/yaml.v3"
 )
 
 var (
