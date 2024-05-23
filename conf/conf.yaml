@@ -10,3 +10,17 @@ redis:
   username: ""
   password: ""
   db: 0
+
+rabbitmq:
+  username: "admin"
+  password: "admin"
+  address: ":5672"
+  vhost: ""
+
+email:
+  addr: smtp.163.com:25
+  host: smtp.163.com
+  from: "Calendar Reminder <ahao_study@163.com>"
+  email: ahao_study@163.com
+  auth: DGRZGRZLEVSDTGWK
+  expire: 300

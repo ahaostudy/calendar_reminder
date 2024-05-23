@@ -4,15 +4,17 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
+	mysqldriver "github.com/go-sql-driver/mysql"
+	"gorm.io/gorm"
+
 	"github.com/ahaostudy/calendar_reminder/dal/mysql"
 	"github.com/ahaostudy/calendar_reminder/model"
 	"github.com/ahaostudy/calendar_reminder/utils/jwt"
 	"github.com/ahaostudy/calendar_reminder/utils/sha256"
-	mysqldriver "github.com/go-sql-driver/mysql"
-	"gorm.io/gorm"
 )
 
-func Register(ctx context.Context, email string, password string, passwordConfirm string) (*model.User, string, error) {
+func Register(ctx context.Context, email, password, passwordConfirm string) (*model.User, string, error) {
 	if password != passwordConfirm {
 		return nil, "", errors.New("password must be the same as confirm password")
 	}
@@ -20,7 +22,7 @@ func Register(ctx context.Context, email string, password string, passwordConfir
 		Email:          email,
 		PasswordHashed: sha256.Encrypt(password),
 	}
-	if err := model.Create(mysql.DB, ctx, user); err != nil {
+	if err := model.CreateUser(mysql.DB, ctx, user); err != nil {
 		var e *mysqldriver.MySQLError
 		// MySQL Error 1062: Duplicate entry
 		if errors.As(err, &e) && e.Number == 1062 {
@@ -35,8 +37,8 @@ func Register(ctx context.Context, email string, password string, passwordConfir
 	return user, token, nil
 }
 
-func Login(ctx context.Context, email string, password string) (*model.User, string, error) {
-	user, err := model.GetByEmail(mysql.DB, ctx, email)
+func Login(ctx context.Context, email, password string) (*model.User, string, error) {
+	user, err := model.GetUserByEmail(mysql.DB, ctx, email)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, "", errors.New("user does not exists")
@@ -54,8 +56,8 @@ func Login(ctx context.Context, email string, password string) (*model.User, str
 	return user, token, nil
 }
 
-func Get(ctx context.Context, id uint) (*model.User, error) {
-	user, err := model.GetById(mysql.DB, ctx, id)
+func GetUser(ctx context.Context, id uint) (*model.User, error) {
+	user, err := model.GetUserById(mysql.DB, ctx, id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.New("user does not exists")

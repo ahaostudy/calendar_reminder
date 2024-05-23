@@ -1,0 +1,5 @@
+package reminder
+
+func RunReminderService() {
+	//
+}

@@ -1,16 +1,23 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"github.com/ahaostudy/calendar_reminder/dal/mysql"
+	"github.com/ahaostudy/calendar_reminder/job"
 	"github.com/ahaostudy/calendar_reminder/log"
+	"github.com/ahaostudy/calendar_reminder/middleware/ginmw"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/ahaostudy/calendar_reminder/router"
 
 	"github.com/ahaostudy/calendar_reminder/conf"
-	"github.com/ahaostudy/calendar_reminder/middleware"
-
 	"github.com/joho/godotenv"
 )
 
@@ -33,13 +40,38 @@ func main() {
 	// mysql
 	mysql.InitMySQL()
 
-	if err := r.Run(conf.GetConf().Server.Address); err != nil {
+	server := &http.Server{Addr: conf.GetConf().Server.Address, Handler: r}
+	go func() {
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			logrus.Fatal(err)
+		}
+	}()
+
+	// async jobs
+	job.InitAsyncJobs()
+
+	// graceful shutdown
+	quit := make(chan os.Signal)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+
+	// waiting for remaining requests to be processed
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := server.Shutdown(ctx); err != nil {
 		logrus.Fatal(err)
 	}
+
+	shutdown()
 }
 
 func initMiddleware(r *gin.Engine) {
-	r.Use(middleware.LoggerMiddleware())
-	r.Use(middleware.CorsMiddleware())
-	r.Use(middleware.GlobalAuthMiddleware())
+	r.Use(ginmw.LoggerMiddleware())
+	r.Use(ginmw.CorsMiddleware())
+	r.Use(ginmw.GlobalAuthMiddleware())
+}
+
+// close all resources
+func shutdown() {
+	job.DestroyAsyncJobs()
 }

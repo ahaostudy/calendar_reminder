@@ -17,9 +17,11 @@ var (
 )
 
 type Config struct {
-	Server Server `yaml:"server"`
-	MySQL  MySQL  `yaml:"mysql"`
-	Redis  Redis  `yaml:"redis"`
+	Server   Server   `yaml:"server"`
+	MySQL    MySQL    `yaml:"mysql"`
+	Redis    Redis    `yaml:"redis"`
+	RabbitMQ RabbitMQ `yaml:"rabbitmq"`
+	Email    Email    `yaml:"email"`
 }
 
 type Server struct {
@@ -36,6 +38,22 @@ type Redis struct {
 	Password string `yaml:"password"`
 	Username string `yaml:"username"`
 	DB       int    `yaml:"db"`
+}
+
+type RabbitMQ struct {
+	Username string `yaml:"username"`
+	Password string `yaml:"password"`
+	Address  string `yaml:"address"`
+	VHost    string `yaml:"vhost"`
+}
+
+type Email struct {
+	Addr   string `yaml:"addr"`
+	Host   string `yaml:"host"`
+	From   string `yaml:"from"`
+	Email  string `yaml:"email"`
+	Auth   string `yaml:"auth"`
+	Expire int    `yaml:"expire"`
 }
 
 // GetConf gets configuration instance
