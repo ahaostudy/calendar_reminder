@@ -1,11 +1,12 @@
 package mysql
 
 import (
+	"time"
+
 	"github.com/sirupsen/logrus"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
-	"time"
 
 	"github.com/ahaostudy/calendar_reminder/model"
 

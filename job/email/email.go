@@ -2,13 +2,15 @@ package email
 
 import (
 	"bytes"
-	"github.com/ahaostudy/calendar_reminder/conf"
-	"github.com/ahaostudy/calendar_reminder/middleware/rabbitmq"
+	"html/template"
+	"net/smtp"
+
 	"github.com/jordan-wright/email"
 	"github.com/sirupsen/logrus"
 	"github.com/streadway/amqp"
-	"html/template"
-	"net/smtp"
+
+	"github.com/ahaostudy/calendar_reminder/conf"
+	"github.com/ahaostudy/calendar_reminder/middleware/rabbitmq"
 )
 
 const RMQEmailKey = "email"

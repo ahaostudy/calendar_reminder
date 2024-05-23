@@ -1,8 +1,9 @@
 package sha256
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestSha256(t *testing.T) {

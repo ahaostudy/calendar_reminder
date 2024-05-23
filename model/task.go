@@ -48,7 +48,7 @@ func DeleteTask(db *gorm.DB, ctx context.Context, id string, userId uint) error 
 	return result.Error
 }
 
-func GetTaskListByTimeRange(db *gorm.DB, ctx context.Context, userId uint, start int64, end int64) (tasks []*Task, err error) {
+func GetTaskListByTimeRange(db *gorm.DB, ctx context.Context, userId uint, start, end int64) (tasks []*Task, err error) {
 	err = db.WithContext(ctx).Where("user_id = ? AND time BETWEEN ? AND ?", userId, start, end).Find(&tasks).Error
 	return
 }

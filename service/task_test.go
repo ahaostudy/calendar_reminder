@@ -1,9 +1,10 @@
 package service
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestParseDate(t *testing.T) {

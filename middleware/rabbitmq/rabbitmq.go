@@ -2,10 +2,12 @@ package rabbitmq
 
 import (
 	"fmt"
-	"github.com/ahaostudy/calendar_reminder/conf"
+	"sync"
+
 	"github.com/sirupsen/logrus"
 	"github.com/streadway/amqp"
-	"sync"
+
+	"github.com/ahaostudy/calendar_reminder/conf"
 )
 
 var (
@@ -35,7 +37,7 @@ type RabbitMQ struct {
 	Key      string
 }
 
-func NewRabbitMQ(exchange string, key string) *RabbitMQ {
+func NewRabbitMQ(exchange, key string) *RabbitMQ {
 	return &RabbitMQ{Exchange: exchange, Key: key}
 }
 

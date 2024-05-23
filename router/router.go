@@ -1,8 +1,9 @@
 package router
 
 import (
-	"github.com/ahaostudy/calendar_reminder/middleware/ginmw"
 	"github.com/gin-gonic/gin"
+
+	"github.com/ahaostudy/calendar_reminder/middleware/ginmw"
 
 	"github.com/ahaostudy/calendar_reminder/controller"
 )

@@ -3,22 +3,25 @@ package main
 import (
 	"context"
 	"errors"
-	"github.com/ahaostudy/calendar_reminder/dal/mysql"
-	"github.com/ahaostudy/calendar_reminder/job"
-	"github.com/ahaostudy/calendar_reminder/log"
-	"github.com/ahaostudy/calendar_reminder/middleware/ginmw"
-	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
+	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
+
+	"github.com/ahaostudy/calendar_reminder/dal/mysql"
+	"github.com/ahaostudy/calendar_reminder/job"
+	"github.com/ahaostudy/calendar_reminder/log"
+	"github.com/ahaostudy/calendar_reminder/middleware/ginmw"
+
 	"github.com/ahaostudy/calendar_reminder/router"
 
-	"github.com/ahaostudy/calendar_reminder/conf"
 	"github.com/joho/godotenv"
+
+	"github.com/ahaostudy/calendar_reminder/conf"
 )
 
 func init() {
