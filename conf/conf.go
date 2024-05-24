@@ -2,6 +2,7 @@ package conf
 
 import (
 	"encoding/json"
+	"github.com/gin-gonic/gin"
 	"os"
 	"path/filepath"
 	"sync"
@@ -62,7 +63,12 @@ func GetConf() *Config {
 }
 
 func initConf() {
-	confPath := filepath.Join("conf", "conf.yaml")
+	var confPath string
+	if gin.Mode() == gin.ReleaseMode {
+		confPath = filepath.Join("conf", "conf_release.yaml")
+	} else {
+		confPath = filepath.Join("conf", "conf.yaml")
+	}
 	content, err := os.ReadFile(confPath)
 	if err != nil {
 		logrus.Fatalf("read conf file error - %v", err)

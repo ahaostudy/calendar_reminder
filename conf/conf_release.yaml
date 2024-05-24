@@ -1,0 +1,25 @@
+server:
+  address: ":8080"
+  log_path: "log/server.log"
+
+mysql:
+  dsn: "root:root@tcp(mysql:3306)/calendar_reminder?charset=utf8mb4&parseTime=True&loc=Local"
+
+redis:
+  address: "redis:6379"
+  username: ""
+  password: ""
+  db: 0
+
+rabbitmq:
+  username: "admin"
+  password: "admin"
+  address: "rabbitmq:5672"
+  vhost: ""
+
+email:
+  addr: smtp.163.com:25
+  host: smtp.163.com
+  from: "Calendar Reminder <ahao_study@163.com>"
+  email: ahao_study@163.com
+  expire: 300

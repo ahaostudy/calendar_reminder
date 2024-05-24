@@ -1,23 +1,62 @@
 version: '3'
 services:
+  calendar_reminder_backend:
+    image: 'ahaostudy/calendar_reminder:latest'
+    platform: 'linux/amd64'
+    ports:
+      - "8080:8080"
+    networks:
+      - calendar_reminder_net
+    volumes:
+      - conf/conf_release.yaml:/app/conf/conf-release.yaml
+      - .env:/app/.env
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
   mysql:
     image: 'mysql:latest'
     ports:
       - "3306:3306"
+    networks:
+      - calendar_reminder_net
     environment:
       - MYSQL_ROOT_PASSWORD=root
       - MYSQL_DATABASE=calendar_reminder
+    healthcheck:
+      test: [ "CMD-SHELL", "curl --silent localhost:3306 >/dev/null || exit 1" ]
+      interval: 10s
+      timeout: 10s
+      retries: 5
   redis:
     image: 'redis:latest'
+    networks:
+      - calendar_reminder_net
     ports:
       - "6379:6379"
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 10s
+      retries: 5
   rabbitmq:
     image: 'rabbitmq:management'
     ports:
       - "5672:5672"
       - "15672:15672"
-    command:
-      - rabbitmq-plugins enable --offline rabbitmq_delayed_message_exchange
+    networks:
+      - calendar_reminder_net
     environment:
       RABBITMQ_DEFAULT_USER: admin
       RABBITMQ_DEFAULT_PASS: admin
+    healthcheck:
+      test: [ "CMD", "rabbitmqctl", "node_health_check" ]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+networks:
+  calendar_reminder_net:
