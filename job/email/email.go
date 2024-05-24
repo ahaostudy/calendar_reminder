@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/ahaostudy/calendar_reminder/model"
 	"html/template"
 	"net/smtp"
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/ahaostudy/calendar_reminder/model"
 
 	"github.com/jordan-wright/email"
 	"github.com/sirupsen/logrus"

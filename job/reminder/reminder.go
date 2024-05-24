@@ -2,12 +2,14 @@ package reminder
 
 import (
 	"context"
+	"time"
+
+	"github.com/sirupsen/logrus"
+
 	"github.com/ahaostudy/calendar_reminder/dal/mysql"
 	"github.com/ahaostudy/calendar_reminder/job/email"
 	"github.com/ahaostudy/calendar_reminder/model"
 	"github.com/ahaostudy/calendar_reminder/utils/crontab"
-	"github.com/sirupsen/logrus"
-	"time"
 )
 
 var (

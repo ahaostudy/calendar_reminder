@@ -1,13 +1,14 @@
 package crontab
 
 import (
-	"github.com/stretchr/testify/assert"
 	"math/rand"
 	"strconv"
 	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 var (
@@ -42,7 +43,7 @@ func TestCrontab(t *testing.T) {
 			actualTime := time.Now()
 			diff := diffMilli(actualTime, expectTime)
 			assert.LessOrEqual(t, diff, 10)
-			//t.Logf("run task: %v, actual time: %v, expect time: %v, millisecond difference: %v\n", id, actualTime, expectTime, diff)
+			// t.Logf("run task: %v, actual time: %v, expect time: %v, millisecond difference: %v\n", id, actualTime, expectTime, diff)
 		})
 		tasks = append(tasks, task)
 	}
@@ -66,7 +67,7 @@ func TestCrontab(t *testing.T) {
 			if c.DeleteTask(task.Key()) {
 				atomic.AddInt32(&cancelCounter, 1)
 				wg.Done()
-				//t.Logf("delete task: %v\n", task.ID)
+				// t.Logf("delete task: %v\n", task.ID)
 			}
 		}(*tasks[idx])
 		// delete the task

@@ -4,9 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/ahaostudy/calendar_reminder/job/reminder"
-	"github.com/sirupsen/logrus"
 	"time"
+
+	"github.com/sirupsen/logrus"
+
+	"github.com/ahaostudy/calendar_reminder/job/reminder"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
