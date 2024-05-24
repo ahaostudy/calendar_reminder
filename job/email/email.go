@@ -2,8 +2,14 @@ package email
 
 import (
 	"bytes"
+	"encoding/json"
+	"fmt"
+	"github.com/ahaostudy/calendar_reminder/model"
 	"html/template"
 	"net/smtp"
+	"os"
+	"path/filepath"
+	"time"
 
 	"github.com/jordan-wright/email"
 	"github.com/sirupsen/logrus"
@@ -13,7 +19,11 @@ import (
 	"github.com/ahaostudy/calendar_reminder/middleware/rabbitmq"
 )
 
-const RMQEmailKey = "email"
+const (
+	RMQEmailKey   = "email"
+	EmailAuthKey  = "EMAIL_AUTH"
+	MaxRetryCount = 3
+)
 
 var RMQEmail *rabbitmq.RabbitMQ
 
@@ -23,10 +33,50 @@ func RunEmailService() {
 }
 
 // business functions that handle sending email requests
-func sendEmailHandler(msg *amqp.Delivery) error {
-	logrus.Info(msg.Body)
+func sendEmailHandler(msg *amqp.Delivery) {
+	logrus.Info("send email request:", string(msg.Body))
 
-	return nil
+	// unmarshal msg body
+	m := new(Message)
+	err := json.Unmarshal(msg.Body, m)
+	if err != nil {
+		logrus.Error(err)
+		m.Send() // retry
+		return
+	}
+
+	// send email
+	task := m.Task
+	t := time.Unix(task.Time, 0)
+	ri := ReminderInfo{Title: task.Title, Time: t.Format("2006-01-02 15:04:05")}
+	err = Send(task.Title, ri.HTML(), task.User.Email)
+	if err != nil {
+		logrus.Error(err)
+		m.Send() // retry
+		return
+	}
+}
+
+// Send and retry automatically
+func (msg *Message) Send() {
+	if msg.RetryCount >= MaxRetryCount {
+		return
+	}
+	msg.RetryCount++
+	m, err := json.Marshal(msg)
+	if err != nil {
+		logrus.Error("json marshal error:", err.Error())
+		return
+	}
+	err = RMQEmail.Publish(m)
+	if err != nil {
+		logrus.Error("publish to rabbitmq failed:", err.Error())
+	}
+}
+
+type Message struct {
+	RetryCount int         `json:"retry_count"`
+	Task       *model.Task `json:"task"`
 }
 
 func Destroy() {
@@ -40,24 +90,28 @@ func Send(subject, html string, toEmails ...string) error {
 	e.To = toEmails
 	e.Subject = subject
 	e.HTML = []byte(html)
-	auth := smtp.PlainAuth("", conf.GetConf().Email.Email, conf.GetConf().Email.Auth, conf.GetConf().Email.Host)
+	auth := smtp.PlainAuth("", conf.GetConf().Email.Email, os.Getenv(EmailAuthKey), conf.GetConf().Email.Host)
 	return e.Send(conf.GetConf().Email.Addr, auth)
 }
 
 type ReminderInfo struct {
-	Title   string
-	Content string
+	Title string
+	Time  string
 }
 
 // HTML generate email HTML based on reminder info
-func (ri *ReminderInfo) HTML() (string, error) {
-	tmpl, err := template.ParseFiles("reminder.tmpl")
+func (ri *ReminderInfo) HTML() string {
+	bakHTML := fmt.Sprintf(`<h1>日程提醒：%s</h1>`, ri.Title)
+
+	tmpl, err := template.ParseFiles(filepath.Join("job", "email", "reminder.tmpl"))
 	if err != nil {
-		return "", err
+		logrus.Error(err)
+		return bakHTML
 	}
 	buf := new(bytes.Buffer)
 	if err := tmpl.Execute(buf, ri); err != nil {
-		return "", err
+		logrus.Error(err)
+		return bakHTML
 	}
-	return buf.String(), nil
+	return buf.String()
 }

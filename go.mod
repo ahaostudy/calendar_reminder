@@ -3,7 +3,6 @@ module github.com/ahaostudy/calendar_reminder
 go 1.22.3
 
 require (
-	github.com/gansidui/priority_queue v0.0.0-20141028160616-1099f988c7dc
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-sql-driver/mysql v1.7.0
 	github.com/golang-jwt/jwt/v5 v5.2.1

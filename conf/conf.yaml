@@ -22,5 +22,4 @@ email:
   host: smtp.163.com
   from: "Calendar Reminder <ahao_study@163.com>"
   email: ahao_study@163.com
-  auth: DGRZGRZLEVSDTGWK
   expire: 300

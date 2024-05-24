@@ -36,8 +36,14 @@ func (crontab *Crontab) AddTask(task *Task) {
 	lastRunningTask, ok := crontab.RunningTasksMax()
 	if ok && task.Time.Before(lastRunningTask.Time) {
 		if lastRunningTask.Work(crontab).Interrupt() {
-			crontab.PopRunningTasks(lastRunningTask)
+			// push to waiting tasks and reset the task
+			work := lastRunningTask.Work(crontab)
+			crontab.Lock()
+			crontab.PopRunningTasks(lastRunningTask.Key())
 			crontab.PushWaitingTasks(lastRunningTask)
+			work.Reset()
+			crontab.Unlock()
+			// run the current, earlier task
 			crontab.runTask(task)
 			return
 		}
@@ -47,24 +53,46 @@ func (crontab *Crontab) AddTask(task *Task) {
 	crontab.PushWaitingTasks(task)
 }
 
+func (crontab *Crontab) DeleteTask(key string) bool {
+	if key == "" {
+		return false
+	}
+	task, ok := crontab.GetRunningTask(key)
+	if ok {
+		crontab.Lock()
+		defer crontab.Unlock()
+		work := task.Work(crontab)
+		crontab.PopRunningTasks(key)
+		// interrupt the execution of the task
+		return work.Interrupt()
+	}
+	task, ok = crontab.GetWaitingTask(key)
+	if ok {
+		crontab.Lock()
+		defer crontab.Unlock()
+		work := task.Work(crontab)
+		crontab.PopWaitingTasks(key)
+		return work.Interrupt()
+	}
+	return false
+}
+
 // run the specified task without focusing on the scheduling logic
 func (crontab *Crontab) runTask(task *Task) {
+	crontab.Lock()
+	defer crontab.Unlock()
 	crontab.PushRunningTasks(task)
-	work := task.Work(crontab)
-	work.Lock()
-	defer work.Unlock()
-	work.Reset()
-	crontab.cron.AddWork(work)
+	crontab.cron.AddWork(task.Work(crontab))
 }
 
 // clear from queue after task done
 func (crontab *Crontab) doneTask(task *Task) {
-	crontab.PopRunningTasks(task)
+	crontab.PopRunningTasks(task.Key())
 	crontab.moveTask()
 }
 
 func (crontab *Crontab) moveTask() {
-	task, ok := crontab.PopWaitingTasks()
+	task, ok := crontab.PopWaitingTasks("")
 	if !ok {
 		return
 	}
@@ -81,14 +109,22 @@ func (crontab *Crontab) PushRunningTasks(task *Task) {
 	crontab.RMX.Unlock()
 }
 
-func (crontab *Crontab) PopRunningTasks(task *Task) {
+func (crontab *Crontab) PopRunningTasks(key string) (task *Task, ok bool) {
 	crontab.RMX.Lock()
-	if task == nil {
-		crontab.RunningTasks.PopMax()
+	if key == "" {
+		_, task, ok = crontab.RunningTasks.PopMax()
 	} else {
-		crontab.RunningTasks.Delete(task.Key())
+		task, ok = crontab.RunningTasks.Delete(key)
 	}
 	crontab.RMX.Unlock()
+	return task, ok
+}
+
+func (crontab *Crontab) GetRunningTask(key string) (task *Task, ok bool) {
+	crontab.RMX.Lock()
+	task, ok = crontab.RunningTasks.Get(key)
+	crontab.RMX.Unlock()
+	return
 }
 
 func (crontab *Crontab) RunningTasksMax() (*Task, bool) {
@@ -111,9 +147,20 @@ func (crontab *Crontab) PushWaitingTasks(task *Task) {
 	crontab.WMX.Unlock()
 }
 
-func (crontab *Crontab) PopWaitingTasks() (*Task, bool) {
+func (crontab *Crontab) GetWaitingTask(key string) (task *Task, ok bool) {
 	crontab.WMX.Lock()
-	_, task, ok := crontab.WaitingTasks.PopMin()
+	task, ok = crontab.WaitingTasks.Get(key)
+	crontab.WMX.Unlock()
+	return
+}
+
+func (crontab *Crontab) PopWaitingTasks(key string) (task *Task, ok bool) {
+	crontab.WMX.Lock()
+	if key == "" {
+		_, task, ok = crontab.WaitingTasks.PopMin()
+	} else {
+		task, ok = crontab.WaitingTasks.Delete(key)
+	}
 	crontab.WMX.Unlock()
 	return task, ok
 }

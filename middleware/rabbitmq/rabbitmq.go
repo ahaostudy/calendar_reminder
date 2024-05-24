@@ -85,7 +85,7 @@ func (r *RabbitMQ) Publish(message []byte) error {
 	)
 }
 
-func (r *RabbitMQ) Consume(handle func(msg *amqp.Delivery) error) {
+func (r *RabbitMQ) Consume(handle func(msg *amqp.Delivery)) {
 	q, err := r.channel.QueueDeclare(r.Key, false, false, false, false, nil)
 	if err != nil {
 		panic(err)
@@ -97,8 +97,6 @@ func (r *RabbitMQ) Consume(handle func(msg *amqp.Delivery) error) {
 	}
 
 	for msg := range msgs {
-		if err := handle(&msg); err != nil {
-			logrus.Error(err.Error())
-		}
+		handle(&msg)
 	}
 }

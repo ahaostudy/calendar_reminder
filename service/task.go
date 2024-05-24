@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/ahaostudy/calendar_reminder/job/reminder"
+	"github.com/sirupsen/logrus"
 	"time"
 
 	"github.com/google/uuid"
@@ -43,6 +45,7 @@ func CreateTask(ctx context.Context, userId uint, title string, t int64) (*model
 	if err != nil {
 		return nil, fmt.Errorf("create task failed: %v" + err.Error())
 	}
+	CheckAndPushCrontab(ctx, task)
 	return task, nil
 }
 
@@ -58,6 +61,7 @@ func UpdateTask(ctx context.Context, id string, userId uint, title string, t int
 		}
 		return nil, fmt.Errorf("update task failed: %v" + err.Error())
 	}
+	CheckAndPushCrontab(ctx, task)
 	return task, nil
 }
 
@@ -69,16 +73,33 @@ func DeleteTask(ctx context.Context, id string, userId uint) error {
 		}
 		return err
 	}
+	// try to delete the task from Crontab to prevent error reminders
+	reminder.DeleteTask(&model.Task{ID: id})
 	return nil
 }
 
 func GetTaskListByDate(ctx context.Context, userId uint, date time.Time) ([]*model.Task, error) {
 	start, end := GetDateStartAndEnd(date)
-	tasks, err := model.GetTaskListByTimeRange(mysql.DB, ctx, userId, start.Unix(), end.Unix())
+	tasks, err := model.GetUserTaskListByTimeRange(mysql.DB, ctx, userId, start.Unix(), end.Unix())
 	if err != nil {
 		return nil, fmt.Errorf("get task list by date error: %v", err)
 	}
 	return tasks, nil
+}
+
+// CheckAndPushCrontab check if the task missed being pulled by the ReminderService and manually add to it
+func CheckAndPushCrontab(ctx context.Context, task *model.Task) {
+	taskTime := time.Unix(task.Time, 0)
+	// if the task's time is in the current round time, it needs to be manually added to the wait queue
+	if reminder.InCurrentRoundTime(taskTime) {
+		var err error
+		task.User, err = GetUser(ctx, task.UserId)
+		if err != nil {
+			logrus.Errorf("get user err: %v", err.Error())
+			return
+		}
+		reminder.AddTask(task)
+	}
 }
 
 func ParseDate(date string) (time.Time, error) {

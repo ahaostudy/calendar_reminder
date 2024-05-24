@@ -52,7 +52,6 @@ type Email struct {
 	Host   string `yaml:"host"`
 	From   string `yaml:"from"`
 	Email  string `yaml:"email"`
-	Auth   string `yaml:"auth"`
 	Expire int    `yaml:"expire"`
 }
 

@@ -1,13 +1,10 @@
 package cron_pool
 
 import (
-	"sync"
 	"time"
 )
 
 type Work struct {
-	sync.Mutex
-
 	id      string
 	time    time.Time
 	data    any
