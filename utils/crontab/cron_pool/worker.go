@@ -18,7 +18,10 @@ func (w Worker) Run() {
 		work := <-w.WorkChan
 		work.worker = &w
 
-		timer := work.Wait()
+		timer, ok := work.Wait()
+		if !ok {
+			continue
+		}
 
 		select {
 		case <-timer.C:

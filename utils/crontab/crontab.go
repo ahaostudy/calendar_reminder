@@ -2,45 +2,18 @@ package crontab
 
 import (
 	"github.com/ahaostudy/calendar_reminder/utils/crontab/cron_pool"
-	"github.com/google/uuid"
 	"github.com/tidwall/btree"
-	//"log"
 	"sync"
 	"time"
 )
 
-// Task timed task
-type Task struct {
-	ID      string
-	Time    time.Time
-	Data    any
-	Handler HandlerFunc
-}
-
-func NewTask(t time.Time, d any, h HandlerFunc) *Task {
-	return &Task{ID: uuid.NewString(), Time: t, Data: d, Handler: h}
-}
-
-// Key generate a unique Key for the task, which is prefixed with a time string and can be sorted by time
-func (t *Task) Key() string {
-	return formatTime(t.Time) + t.ID
-}
-
-// RunningTask contains the Work object, which can be used to interrupt the timed task when necessary
-// and give up resources to earlier tasks
-type RunningTask struct {
-	Task
-	Work *cron_pool.Work
-}
-
-type HandlerFunc func(data any)
-
 // Crontab a timed task scheduler that automatically reorders tasks based on their execution time
 type Crontab struct {
+	sync.Mutex
 	cron         *cron_pool.CronPoll
-	RunningTasks btree.Map[string, *RunningTask]
+	RunningTasks btree.Map[string, *Task]
 	WaitingTasks btree.Map[string, *Task]
-	RMX          sync.Mutex
+	RMX          sync.RWMutex
 	WMX          sync.Mutex
 }
 
@@ -54,19 +27,20 @@ func (crontab *Crontab) Run() {
 
 func (crontab *Crontab) AddTask(task *Task) {
 	// when the number of running tasks is less than the number of goroutines, it can be run directly
-	if crontab.RunningTasks.Len() < crontab.cron.Gos {
+	if crontab.RunningTasksLen() < crontab.cron.Gos {
 		crontab.runTask(task)
 		return
 	}
 	// when the execution time of the task is earlier than the execution time of the last one in the running queue
 	// its resources are seized
-	_, lastRunningTask, ok := crontab.RunningTasks.Max()
+	lastRunningTask, ok := crontab.RunningTasksMax()
 	if ok && task.Time.Before(lastRunningTask.Time) {
-		crontab.PopRunningTasks(&lastRunningTask.Task)
-		lastRunningTask.Work.Interrupt()
-		crontab.PushWaitingTasks(&lastRunningTask.Task)
-		crontab.runTask(task)
-		return
+		if lastRunningTask.Work(crontab).Interrupt() {
+			crontab.PopRunningTasks(lastRunningTask)
+			crontab.PushWaitingTasks(lastRunningTask)
+			crontab.runTask(task)
+			return
+		}
 	}
 
 	// otherwise push the waiting queue
@@ -75,21 +49,12 @@ func (crontab *Crontab) AddTask(task *Task) {
 
 // run the specified task without focusing on the scheduling logic
 func (crontab *Crontab) runTask(task *Task) {
-	work := crontab.work(task)
-	crontab.PushRunningTasks(&RunningTask{Task: *task, Work: work})
+	crontab.PushRunningTasks(task)
+	work := task.Work(crontab)
+	work.Lock()
+	defer work.Unlock()
+	work.Reset()
 	crontab.cron.AddWork(work)
-}
-
-func (crontab *Crontab) work(task *Task) (work *cron_pool.Work) {
-	d := task.Time.Sub(time.Now())
-	if d < 0 {
-		d = 0
-	}
-	work = cron_pool.NewWork(task.ID, d, task.Data, func(id string, data any) {
-		defer crontab.doneTask(task)
-		task.Handler(task.Data)
-	})
-	return work
 }
 
 // clear from queue after task done
@@ -110,7 +75,7 @@ func formatTime(t time.Time) string {
 	return t.Format("2006-01-02 15:04:05")
 }
 
-func (crontab *Crontab) PushRunningTasks(task *RunningTask) {
+func (crontab *Crontab) PushRunningTasks(task *Task) {
 	crontab.RMX.Lock()
 	crontab.RunningTasks.Set(task.Key(), task)
 	crontab.RMX.Unlock()
@@ -126,6 +91,20 @@ func (crontab *Crontab) PopRunningTasks(task *Task) {
 	crontab.RMX.Unlock()
 }
 
+func (crontab *Crontab) RunningTasksMax() (*Task, bool) {
+	crontab.RMX.RLock()
+	_, task, ok := crontab.RunningTasks.Max()
+	crontab.RMX.RUnlock()
+	return task, ok
+}
+
+func (crontab *Crontab) RunningTasksLen() int {
+	crontab.RMX.RLock()
+	length := crontab.RunningTasks.Len()
+	crontab.RMX.RUnlock()
+	return length
+}
+
 func (crontab *Crontab) PushWaitingTasks(task *Task) {
 	crontab.WMX.Lock()
 	crontab.WaitingTasks.Set(task.Key(), task)
@@ -134,7 +113,7 @@ func (crontab *Crontab) PushWaitingTasks(task *Task) {
 
 func (crontab *Crontab) PopWaitingTasks() (*Task, bool) {
 	crontab.WMX.Lock()
-	defer crontab.WMX.Unlock()
 	_, task, ok := crontab.WaitingTasks.PopMin()
+	crontab.WMX.Unlock()
 	return task, ok
 }
