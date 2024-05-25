@@ -48,7 +48,7 @@ func sendEmailHandler(msg *amqp.Delivery) {
 
 	// send email
 	task := m.Task
-	t := time.Unix(task.Time, 0)
+	t := time.Unix(task.Time, 0).Add(8 * time.Hour)
 	ri := ReminderInfo{Title: task.Title, Time: t.Format("2006-01-02 15:04:05")}
 	err = Send(task.Title, ri.HTML(), task.User.Email)
 	if err != nil {
