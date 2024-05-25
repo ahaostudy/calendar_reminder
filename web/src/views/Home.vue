@@ -5,7 +5,7 @@
       title="Calendar Reminder"
     >
       <template #back-icon>
-        <Logo/>
+        <Logo />
       </template>
       <template #subtitle>
         <a-space>
@@ -56,6 +56,8 @@ onMounted(() => {
 
 function logout() {
   localStorage.removeItem('userinfo')
+  loggedIn.value = false
+  userinfo.value.email = ''
 }
 </script>
 
@@ -69,6 +71,7 @@ function logout() {
   gap: 20px;
   align-items: center;
 }
+
 .main {
   display: flex;
   height: calc(100vh - 61px);
