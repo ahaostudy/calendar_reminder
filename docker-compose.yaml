@@ -8,7 +8,7 @@ services:
     networks:
       - calendar_reminder_net
     volumes:
-      - conf/conf_release.yaml:/app/conf/conf-release.yaml
+      - ./conf/conf_release.yaml:/app/conf/conf_release.yaml
       - .env:/app/.env
     depends_on:
       mysql:
