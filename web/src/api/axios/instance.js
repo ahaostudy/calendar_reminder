@@ -1,4 +1,6 @@
 import axios from 'axios'
+import { Message } from '@arco-design/web-vue'
+import router from '../../router'
 
 const instance = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
@@ -27,11 +29,8 @@ instance.interceptors.response.use(
       return Promise.reject(error)
     }
     if (error.response.status === 401) {
-      Message.error('请先登录账号')
+      Message.error('Please login your account first')
       router.push('/login')
-    }
-    if (error.response.status === 403) {
-      Message.error('无操作权限')
     }
     return Promise.reject(error)
   }

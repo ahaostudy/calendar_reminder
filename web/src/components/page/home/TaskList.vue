@@ -124,7 +124,7 @@ function updateTask(i, id, title, time) {
       Message.error(res['status_msg'])
       return
     }
-    taskList[task.i] = res.data
+    taskList[i] = res.data
     Message.success('update task successful')
   })
 }
