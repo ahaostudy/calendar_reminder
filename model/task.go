@@ -25,7 +25,7 @@ func GetTaskById(db *gorm.DB, ctx context.Context, id string, userId uint) (task
 }
 
 func GetTaskList(db *gorm.DB, ctx context.Context, userId uint) (tasks []*Task, err error) {
-	err = db.WithContext(ctx).Where("user_id = ?", userId).Find(&tasks).Error
+	err = db.WithContext(ctx).Where("user_id = ?", userId).Order("time DESC").Find(&tasks).Error
 	return
 }
 
@@ -56,6 +56,6 @@ func GetTaskListByTimeRange(db *gorm.DB, ctx context.Context, start, end int64) 
 }
 
 func GetUserTaskListByTimeRange(db *gorm.DB, ctx context.Context, userId uint, start, end int64) (tasks []*Task, err error) {
-	err = db.WithContext(ctx).Where("user_id = ? AND time BETWEEN ? AND ?", userId, start, end).Find(&tasks).Error
+	err = db.WithContext(ctx).Where("user_id = ? AND time BETWEEN ? AND ?", userId, start, end).Order("time DESC").Find(&tasks).Error
 	return
 }
