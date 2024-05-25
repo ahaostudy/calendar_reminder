@@ -17,6 +17,15 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+  calendar_reminder_frontend:
+    image: 'ahaostudy/calendar_reminder_frontend:latest'
+    platform: 'linux/amd64'
+    ports:
+      - "80:80"
+    networks:
+      - calendar_reminder_net
+    depends_on:
+      - calendar_reminder_backend
   mysql:
     image: 'mysql:latest'
     ports:

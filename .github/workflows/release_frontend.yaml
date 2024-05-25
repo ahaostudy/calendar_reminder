@@ -1,0 +1,34 @@
+name: Release Frontend
+
+on:
+  push:
+    branches:
+      - release_fe
+  pull_request:
+    branches:
+      - release_fe
+
+jobs:
+  release_docker_image:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Login to Docker Hub
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        run: |
+          echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
+
+      - name: Build Docker image
+        run: docker build -t calendar_reminder_frontend:latest -f web/Dockerfile .
+
+      - name: Push Docker image
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+        run: |
+          docker tag calendar_reminder_frontend:latest $DOCKER_USERNAME/calendar_reminder_frontend:latest
+          docker push $DOCKER_USERNAME/calendar_reminder_frontend:latest
