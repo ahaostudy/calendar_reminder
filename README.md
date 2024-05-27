@@ -27,13 +27,13 @@ docker-compose up -d
 #### 定时任务调度
 
 项目采用手动实现的轻量级定时任务调度器 [crontab](./utils/crontab)，底层基于 [go/time](https://pkg.go.dev/time)
-和 [tidwall/tree](https://github.com/tidwall/btree) 实现，在易用性和性能上都表现良好；
+和 [tidwall/btree](https://github.com/tidwall/btree) 实现，在易用性和性能上都表现良好；
 相比于 RabbitMQ 的定时消息，该调度器支持直接删除 Waiting 中的任务，并将资源让出给其它任务。
 
 #### 消息推送
 
 通过定时任务定期拉取接下来一段时间区间的定时消息，并提交到定时任务调度器中调度执行；
-到达定时消息的推送时间时，调度器会执行处理该消息的回调函数，该函数会该消息推送到 MQ，并交给消费者统一发送邮件，消费端通过重试策略增加服务的可靠。
+到达定时消息的推送时间时，调度器会执行处理该消息的回调函数，该函数会将该消息推送到 MQ，并交给消费者统一发送邮件，消费端通过重试策略增加服务的可靠性。
 
 ### DevOps
 
